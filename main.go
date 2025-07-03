@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/MandaKausthubh/GraphLibrary"
+	"github.com/MandaKausthubh/GraphLibrary/utils"
 )
 
 
