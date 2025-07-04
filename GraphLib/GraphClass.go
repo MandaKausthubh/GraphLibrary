@@ -7,7 +7,7 @@ package graphlib
 
 type GeoNode interface {
 	getID() 		string
-	get_DB_key()	string
+	getDBKey()		string
 }
 
 type EdgeWeight interface {
@@ -29,4 +29,27 @@ type GeoGraph interface {
 }
 
 // Get an Create a super Regional Node
+type GeoNodeRegional struct{
+	NodeID string
+	DB_info string
+	Representation string
+}
 
+type GeoEgdeRegional struct {
+	NodeID1, NodeID2 string
+	ListOfPaths 	[]string
+	CostOfPaths 	[]float32
+	TimeOfPaths 	[]float32
+}
+
+type Pair struct {
+	NodeIdFrom, NodeIDTo string
+}
+
+type GeoGraphRegional struct {
+	GraphID 		string
+	NumNodes 		int
+	NumEdges 		int
+	NodesList 		[]GeoNodeRegional
+	EdgeList 		map[Pair]GeoEgdeRegional
+}
