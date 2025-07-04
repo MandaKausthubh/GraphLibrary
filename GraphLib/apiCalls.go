@@ -14,7 +14,7 @@ func CallGraphHopper(start, end GHPoint, apiKey string) (*GHResponse, error) {
 		Points:        []GHPoint{start, end},
 		Profile:       "car",
 		Locale:        "en",
-		Instructions:  true,
+		Instructions:  false,
 		PointsEncoded: false,
 	}
 
