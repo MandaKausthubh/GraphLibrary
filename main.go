@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/MandaKausthubh/GraphLibrary/utils"
+	"github.com/MandaKausthubh/GraphLibrary/GraphLib"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,9 +34,24 @@ func setupLogFile() {
 	gin.DefaultWriter = io.MultiWriter(logFile, os.Stdout)
 }
 
+
+
 func main() {
 	fmt.Println("Hello, World!");
 	fmt.Println("The sum of 3 and 5 is:", utils.Add(3, 5))
+
+
+	apiKey := os.Getenv("GRAPH_HOPPER_API_KEY")
+	if apiKey == "" {
+        fmt.Println("API key not found in environment")
+        return
+    }
+
+	graphlib.CallGraphHopper(
+		graphlib.GHPoint{11.539421, 48.118477},
+		graphlib.GHPoint{11.559023,48.12228},
+		apiKey,
+	)
 
 	server := gin.New()
 	server.Use(CustomLogger(), gin.Recovery())
