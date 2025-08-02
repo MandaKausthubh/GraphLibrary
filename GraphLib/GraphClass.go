@@ -1,88 +1,109 @@
 package graphlib
 
-
 import (
-	"context"
-	"database/sql"
-	"encoding/json"
+	"time"
+	"github.com/google/uuid"
 	"fmt"
+	"context"
+	"github.com/jmoiron/sqlx"
 )
 
-type geoNode struct {
-	ID 			string
-	name 		string
-	metadata 	map[string]interface{}
+type Node struct {
+    ID           uuid.UUID
+    Name         string
+    Type         string // country, state, city, etc.
+    ParentID     *uuid.UUID
+    Latitude     float64
+    Longitude    float64
+    HasSeaport   bool
+    HasAirport   bool
+    Capacity     int
+    CreatedAt    time.Time
+    Metadata     map[string]interface{}
 }
 
-type NodePair struct {
-	NodeID_from 	string
-	NodeID_to 		string
-	metaData 		map[string]interface{}
+type Edge struct {
+    ID           uuid.UUID
+    FromNodeID   uuid.UUID
+    ToNodeID     uuid.UUID
+    DistanceKM   float64
+    TravelTimeS  int
+    Metadata     map[string]interface{}
+    CreatedAt    time.Time
 }
 
-type geoEdge struct {
-	ConnectingNodes 	NodePair
-	descritiondata 		map[string]interface{}
+type Graph struct {
+    Nodes map[uuid.UUID]*Node
+    Edges []*Edge
 }
 
-type geoGraph struct {
-	GraphType 		string
-	NodesList 		map[string]geoNode
-	ComputedEdges	map[string]geoEdge
-	EdgeDelimiter 	string
-}
 
-func BuildGeoGraph(ctx context.Context, db *sql.DB, graphID string) (geoGraph, error) {
-	query := `
-		WITH RECURSIVE region_tree AS (
-			SELECT id, name, parent_id, metadata
-			FROM regions
-			WHERE id = $1
-			UNION ALL
-			SELECT r.id, r.name, r.parent_id, r.metadata
-			FROM regions r
-			INNER JOIN region_tree rt ON r.parent_id = rt.id
-		)
-		SELECT id, name, metadata FROM region_tree;
-	`
-
-	rows, err := db.QueryContext(ctx, query, graphID)
-	if err != nil {
-		return geoGraph{}, fmt.Errorf("query failed: %w", err)
-	}
-	defer rows.Close()
-
-	graph := geoGraph{}
-
-	for rows.Next() {
-		var id, name string
-		var metaRaw []byte
-
-		err := rows.Scan(&id, &name, &metaRaw)
-		if err != nil {
-			return graph, fmt.Errorf("row scan failed: %w", err)
+func (g *Graph) AddNode(node *Node) int {
+	for _, existingNode := range g.Nodes {
+		if existingNode.ID == node.ID {
+			return 0
 		}
-
-		var meta map[string]interface{}
-		if err := json.Unmarshal(metaRaw, &meta); err != nil {
-			return graph, fmt.Errorf("json decode failed for id %s: %w", id, err)
-		}
-
-		node := geoNode{id, name, meta}
-		graph.NodesList[id] = node
 	}
-
-	if err := rows.Err(); err != nil {
-		return graph, fmt.Errorf("rows error: %w", err)
-	}
-
-	return graph, nil
+	g.Nodes[node.ID] = node
+	return 1
 }
 
+func (g *Graph) AddEdge(edge *Edge) int {
+	for _, existingEdge := range g.Edges {
+		if existingEdge.ID == edge.ID {
+			return 0
+		}
+	}
+	g.Edges = append(g.Edges, edge)
+	return 1
+}
 
+func (g *Graph) ImmediateSubgraph(ctx context.Context, db *sqlx.DB, rootID uuid.UUID) (*Graph, error) {
+    subgraph := &Graph{
+        Nodes: make(map[uuid.UUID]*Node),
+        Edges: make([]*Edge, 0),
+    }
 
+    var nodes []*Node
+    query := `
+        SELECT * FROM nodes WHERE parent_node_id = $1;
+    `
+    if err := db.SelectContext(ctx, &nodes, query, rootID); err != nil {
+        return nil, fmt.Errorf("failed to fetch children: %w", err)
+    }
 
+    // Optional: also include the root itself
+    var root Node
+    if err := db.GetContext(ctx, &root, `SELECT * FROM nodes WHERE node_id = $1`, rootID); err != nil {
+        return nil, fmt.Errorf("failed to fetch root node: %w", err)
+    }
 
+    subgraph.Nodes[root.ID] = &root
+    for _, n := range nodes {
+        subgraph.Nodes[n.ID] = n
+    }
 
+    // Optional: Fetch edges between only these nodes
+    nodeIDs := make([]interface{}, 0, len(subgraph.Nodes))
+    for id := range subgraph.Nodes {
+        nodeIDs = append(nodeIDs, id)
+    }
 
+    edgeQuery, args, err := sqlx.In(`
+        SELECT * FROM edges
+        WHERE from_node_id IN (?) AND to_node_id IN (?)
+    `, nodeIDs, nodeIDs)
+    if err != nil {
+        return nil, err
+    }
+    edgeQuery = db.Rebind(edgeQuery)
 
+    var edges []*Edge
+    if err := db.SelectContext(ctx, &edges, edgeQuery, args...); err != nil {
+        return nil, err
+    }
+
+    subgraph.Edges = edges
+
+    return subgraph, nil
+}
