@@ -14,3 +14,13 @@ CREATE TABLE nodes (
 );
 
 CREATE TABLE node_metadata (node_id UUID PRIMARY KEY REFERENCES nodes (node_id), metadata JSONB);
+
+CREATE TABLE edges (
+    edge_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    from_node_id UUID REFERENCES nodes(node_id),
+    to_node_id UUID REFERENCES nodes(node_id),
+    distance_km FLOAT,
+    travel_time_sec INTEGER,
+    metadata JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
