@@ -1,5 +1,7 @@
 package graph
 
+import "github.com/google/uuid"
+
 type Node struct {
 	ID         string  `json:"id,omitempty"`
 	Name       string  `json:"name"`
@@ -12,5 +14,19 @@ type Node struct {
 	Capacity   int     `json:"capacity"`
 }
 
-func (n *Node) IsRoot() bool
-func (n *Node) Location() (float64, float64)
+func (n *Node) IsRoot() bool {
+	return n.ParentID == nil
+}
+
+func (n *Node) Location() (float64, float64) {
+	return n.Latitude, n.Longitude
+}
+
+func IsValidUUID(id string) bool {
+	_, err := uuid.Parse(id)
+	return err == nil
+}
+
+
+
+

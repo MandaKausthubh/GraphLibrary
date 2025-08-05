@@ -24,3 +24,8 @@ CREATE TABLE edges (
     metadata JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_edges_from_node ON edges(from_node_id);
+CREATE INDEX idx_edges_to_node ON edges(to_node_id);
+CREATE INDEX idx_edges_pair ON edges(from_node_id, to_node_id);
+
