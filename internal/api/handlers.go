@@ -42,3 +42,11 @@ func GetSubgraphHandler(c *gin.Context) {
 		"data":   subgraph,
 	})
 }
+
+// TODO: Implement the following handlers
+func CreateEdgeHandler(c *gin.Context);
+func GetEdgeHandler(c *gin.Context);
+
+// TODO: Implement the following handlers
+func GetEdgeCacheHandler(c *gin.Context);
+func SetEdgeCacheHandler(c *gin.Context);

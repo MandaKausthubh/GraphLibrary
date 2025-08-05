@@ -1,15 +1,24 @@
 package api
 
 import (
-	"net/http"
-	"github.com/go-chi/chi/v5"
+	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes() http.Handler {
-	r := chi.NewRouter()
 
-	r.Get("/node/{id}", GetNodeHandler)
-	r.Get("/subgraph/{id}", GetSubgraphHandler)
+func RegisterRoutes() *gin.Engine {
+	router := gin.Default()
 
-	return r
+	// Node routes
+	router.GET("/nodes/:id", GetNodeHandler)
+	router.GET("/subgraph/:id", GetSubgraphHandler)
+
+	// Edge routes
+	router.POST("/edges", CreateEdgeHandler)
+	router.GET("/edges/:fromID/:toID", GetEdgeHandler)
+
+	// Cache routes
+	router.GET("/cache/edge/:fromID/:toID", GetEdgeCacheHandler)
+	router.POST("/cache/edge", SetEdgeCacheHandler)
+
+	return router
 }
