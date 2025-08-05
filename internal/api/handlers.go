@@ -12,33 +12,33 @@ func GetNodeHandler(c *gin.Context) {
 
 	node, err := db.GetNodeByID(nodeID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, APIResponse{
-			Status: "error",
-			Error:  "Node not found",
+		c.JSON(http.StatusNotFound, gin.H{
+			"status": "error",
+			"error":  "Node not found",
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, APIResponse{
-		Status: "success",
-		Data:   node,
+	c.JSON(http.StatusOK, gin.H{
+		"success": "success",
+		"data":   node,
 	})
 }
 
 func GetSubgraphHandler(c *gin.Context) {
 	nodeID := c.Param("id")
 
-	subgraph, err := graph.GenerateSubgraph(nodeID)
+	subgraph, err := graph.GetSubGraph(nodeID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, APIResponse{
-			Status: "error",
-			Error:  "Could not generate subgraph",
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"error":  "Could not generate subgraph",
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, APIResponse{
-		Status: "success",
-		Data:   subgraph,
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   subgraph,
 	})
 }
