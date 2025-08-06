@@ -1,5 +1,13 @@
 package router
 
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+	"github.com/MandaKausthubh/GraphLibrary/internal/graph"
+	"github.com/google/uuid"
+)
+
 type GHPoint [2]float64
 
 type GHRequest struct {
@@ -55,3 +63,28 @@ type GHResponse struct {
 	} `json:"paths"`
 }
 
+func ConvertGHResponseToEdge(resp *GHResponse, fromID, toID string) (*graph.Edge, error) {
+	if len(resp.Paths) == 0 {
+		return nil, fmt.Errorf("no paths found in GraphHopper response")
+	}
+
+	path := resp.Paths[0] // take the first path
+
+	// Convert path metadata to JSON string
+	metadataBytes, err := json.Marshal(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal metadata: %v", err)
+	}
+
+	edge := &graph.Edge{
+		EdgeID:        uuid.New().String(),
+		FromNodeID:    fromID,
+		ToNodeID:      toID,
+		DistanceKm:    path.Distance / 1000.0, // GraphHopper returns meters
+		TravelTimeSec: int(path.Time / 1000),  // GraphHopper returns milliseconds
+		Metadata:      string(metadataBytes),
+		CreatedAt:     time.Now(),
+	}
+
+	return edge, nil
+}

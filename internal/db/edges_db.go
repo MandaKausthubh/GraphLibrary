@@ -14,7 +14,7 @@ func (r *EdgeRepositoryImpl) CreateEdge(edge *graph.Edge) error {
 		INSERT INTO edges (edge_id, from_node_id, to_node_id, distance_km, travel_time_sec, metadata)
 		VALUES ($1, $2, $3, $4, $5, $6)
 	`
-	_, err := r.DB.Exec(query, edge.ID, edge.FromNodeID, edge.ToNodeID, edge.DistanceKM, edge.TravelTimeSec, edge.Metadata)
+	_, err := r.DB.Exec(query, edge.EdgeID, edge.FromNodeID, edge.ToNodeID, edge.DistanceKm, edge.TravelTimeSec, edge.Metadata)
 	return err
 }
 
@@ -27,7 +27,7 @@ func (r *EdgeRepositoryImpl) GetEdge(fromID, toID string) (*graph.Edge, error) {
 	row := r.DB.QueryRow(query, fromID, toID)
 
 	var edge graph.Edge
-	err := row.Scan(&edge.ID, &edge.FromNodeID, &edge.ToNodeID, &edge.DistanceKM, &edge.TravelTimeSec, &edge.Metadata)
+	err := row.Scan(&edge.EdgeID, &edge.FromNodeID, &edge.ToNodeID, &edge.DistanceKm, &edge.TravelTimeSec, &edge.Metadata)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (r *EdgeRepositoryImpl) GetEdgesByNodeID(nodeID string) ([]*graph.Edge, err
 	var edges []*graph.Edge
 	for rows.Next() {
 		var edge graph.Edge
-		if err := rows.Scan(&edge.ID, &edge.FromNodeID, &edge.ToNodeID, &edge.DistanceKM, &edge.TravelTimeSec, &edge.Metadata); err != nil {
+		if err := rows.Scan(&edge.EdgeID, &edge.FromNodeID, &edge.ToNodeID, &edge.DistanceKm, &edge.TravelTimeSec, &edge.Metadata); err != nil {
 			return nil, err
 		}
 		edges = append(edges, &edge)

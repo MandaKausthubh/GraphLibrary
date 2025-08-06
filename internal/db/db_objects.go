@@ -22,4 +22,3 @@ type EdgeRepository interface {
 	GetEdgesByNodeID(nodeID string) ([]*graph.Edge, error)
 }
 
-

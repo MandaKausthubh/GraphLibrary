@@ -90,3 +90,31 @@ func StoreMetadata(nodeID string, metadata map[string]interface{}) error {
 	_, err := Pool.Exec(context.Background(), "INSERT INTO metadata (node_id, data) VALUES ($1, $2)", nodeID, metadata)
 	return err
 }
+
+
+func BuildGraphForRegion(ctx context.Context, repo NodeRepository, edgeRepo EdgeRepository, regionID string) (*graph.Graph, error) {
+	nodes, err := repo.GetChildNodes(regionID)
+	if err != nil {
+		return nil, err
+	}
+
+	graph := &graph.Graph{}
+	for _, n := range nodes {
+		graph.AddNode(n)
+
+		edges, err := edgeRepo.GetEdgesByNodeID(n.ID)
+		if err != nil {
+			return nil, err
+		}
+		for _, e := range edges {
+			graph.AddEdge(e)
+		}
+	}
+
+	return graph, nil
+}
+
+
+
+
+

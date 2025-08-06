@@ -1,42 +1,45 @@
 package main
 
 import (
-	"fmt"
-	"io"
-	"os"
-	"time"
-	// "github.com/joho/godotenv"
-	"github.com/MandaKausthubh/GraphLibrary/utils"
-	// "github.com/MandaKausthubh/GraphLibrary/GraphLib"
+	"log"
 	"github.com/gin-gonic/gin"
+	"github.com/MandaKausthubh/GraphLibrary/internal/api"
+	"github.com/MandaKausthubh/GraphLibrary/internal/db"
+	"github.com/MandaKausthubh/GraphLibrary/internal/graph"
+	"github.com/MandaKausthubh/GraphLibrary/internal/redis_cache"
 )
 
-func CustomLogger() gin.HandlerFunc {
-	return gin.LoggerWithFormatter(func(params gin.LogFormatterParams) string {
-		return fmt.Sprintf(
-			"%s - %s %s %d %s %s\n",
-			params.ClientIP,
-			params.Method,
-			params.Path,
-			params.StatusCode,
-			params.TimeStamp.Format(time.RFC822Z),
-			params.Latency,
-		)
-	})
-}
-
-func setupLogFile() {
-	logFile, err := os.OpenFile("gin.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		fmt.Println("Error opening log file:", err)
-		return
-	}
-	gin.DefaultWriter = io.MultiWriter(logFile, os.Stdout)
-}
-
-
-
 func main() {
-	fmt.Println("Hello, World!");
-	fmt.Println("The sum of 3 and 5 is:", utils.Add(3, 5))
+	// Initialize Redis Cache
+	cacheClient := cache.NewRedisClient("localhost:6379", "", 0)
+
+	// Initialize PostgreSQL DB
+	dbClient, err := db.NewPostgresDB("postgres://user:password@localhost:5432/yourdb?sslmode=disable")
+	if err != nil {
+		log.Fatalf("failed to connect to PostgreSQL: %v", err)
+	}
+
+	// Create repository and services
+	nodeRepo := db.NewNodeRepository(dbClient)
+	edgeRepo := db.NewEdgeRepository(dbClient)
+
+	graphService := graph.NewGraphService(edgeRepo, nodeRepo, cacheClient)
+
+	handler := api.NewHandler(graphService)
+
+	// Setup Gin Router
+	r := gin.Default()
+
+	// Register routes
+	r.GET("/edge", handler.GetEdgeHandler)
+	r.POST("/edge", handler.CreateEdgeHandler)
+
+	r.GET("/node/:id", handler.GetNodeHandler)
+	r.POST("/node", handler.CreateNodeHandler)
+
+	// Start the server
+	log.Println("Server started on :8080")
+	if err := r.Run(":8080"); err != nil {
+		log.Fatalf("Server failed: %v", err)
+	}
 }

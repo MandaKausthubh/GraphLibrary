@@ -1,7 +1,6 @@
 package db
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"github.com/MandaKausthubh/GraphLibrary/internal/graph"
